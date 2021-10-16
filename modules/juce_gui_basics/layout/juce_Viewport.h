@@ -42,6 +42,7 @@ namespace juce
     @tags{GUI}
 */
 class JUCE_API  Viewport  : public Component,
+                            public Timer,
                             private ComponentListener,
                             private ScrollBar::Listener
 {
@@ -75,6 +76,11 @@ public:
     */
     void setViewedComponent (Component* newViewedComponent,
                              bool deleteComponentWhenNoLongerNeeded = true);
+
+    void timerCallback() override;
+    Point<int> newPos;
+    Point<int> currentPos;
+    double startTime = 0;
 
     /** Returns the component that's currently being used inside the Viewport.
 
@@ -311,8 +317,7 @@ protected:
         Subclasses can override this if they need to customise the scrollbars in some way.
     */
     virtual ScrollBar* createScrollBarComponent (bool isVertical);
-
-private:
+    virtual void updateVisibleArea();
     //==============================================================================
     std::unique_ptr<ScrollBar> verticalScrollBar, horizontalScrollBar;
     Component contentHolder;
@@ -330,7 +335,7 @@ private:
 
     Point<int> viewportPosToCompPos (Point<int>) const;
 
-    void updateVisibleArea();
+    
     void deleteOrRemoveContentComp();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Viewport)

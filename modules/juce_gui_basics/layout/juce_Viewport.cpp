@@ -567,13 +567,50 @@ bool Viewport::useMouseWheelMoveIfNeeded (const MouseEvent& e, const MouseWheelD
 
             if (pos != getViewPosition())
             {
-                setViewPosition (pos);
+                if (!wheel.isSmooth && !isTimerRunning())
+                {
+                    currentPos = getViewPosition();
+                    newPos = pos;
+                    startTime = Time::getMillisecondCounterHiRes();
+                    startTimer(1000 / 60);
+                }
+                else if (wheel.isSmooth)
+                {
+                    setViewPosition(pos);
+                }
                 return true;
             }
         }
     }
 
     return false;
+}
+
+float ViewPortScrollAlgo(float t)
+{
+    float sqt = t * t;
+    return sqt / (2.0f * (sqt - t) + 1.0f);
+}
+
+void Viewport::timerCallback()
+{
+    double deltaTime = Time::getMillisecondCounterHiRes() - startTime;
+    double currentDelta = (deltaTime / 1000) / 0.25f;
+
+    if (currentDelta >= 1)
+    {
+        setViewPosition(newPos);
+        stopTimer();
+    }
+    else
+    {
+        float t = ViewPortScrollAlgo(currentDelta);
+
+        Line<int> line(currentPos, newPos);
+        Point<int> deltaPoint = line.getPointAlongLineProportionally(t);
+
+        setViewPosition(deltaPoint);
+    }
 }
 
 static bool isUpDownKeyPress (const KeyPress& key)

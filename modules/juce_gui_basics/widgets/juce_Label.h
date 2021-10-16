@@ -251,7 +251,7 @@ public:
     /** Makes the editor appear as if the label had been clicked by the user.
         @see textWasEdited, setEditable
     */
-    void showEditor();
+    virtual void showEditor();
 
     /** Hides the editor if it was being shown.
 
@@ -339,7 +339,6 @@ protected:
     /** @internal */
     void callChangeListeners();
 
-private:
     //==============================================================================
     Value textValue;
     String lastTextValue;

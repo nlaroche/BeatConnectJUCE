@@ -109,7 +109,7 @@ public:
     /** @internal */
     void paintButton (Graphics&, bool, bool) override;
 
-private:
+protected:
     //==============================================================================
     Colour normalColour,   overColour,   downColour,
            normalColourOn, overColourOn, downColourOn, outlineColour;

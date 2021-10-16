@@ -285,8 +285,7 @@ public:
 
 
 //==============================================================================
-class ListBox::ListViewport  : public Viewport,
-                               private Timer
+class ListBox::ListViewport  : public Viewport
 {
 public:
     ListViewport (ListBox& lb)  : owner (lb)
@@ -329,7 +328,8 @@ public:
         if (auto* m = owner.getModel())
             m->listWasScrolled();
 
-        startTimer (50);
+        handleTimer = true;
+        //startTimer (50);
     }
 
     void updateVisibleArea (const bool makeSureItUpdatesContent)
@@ -470,14 +470,27 @@ private:
         return createIgnoredAccessibilityHandler (*this);
     }
 
+    
     void timerCallback() override
     {
-        stopTimer();
+        // TODO re-implement this properly somehow, we're using the base class for smooth scrolling
+        Viewport::timerCallback();
+        /*
+        if (handleTimer)
+        {
+            handleTimer = false;
+            stopTimer();
 
-        if (auto* handler = owner.getAccessibilityHandler())
-            handler->notifyAccessibilityEvent (AccessibilityEvent::structureChanged);
+            if (auto* handler = owner.getAccessibilityHandler())
+                handler->notifyAccessibilityEvent(AccessibilityEvent::structureChanged);
+        }
+        else
+        {
+            Viewport::timerCallback();
+        }*/
     }
 
+    bool handleTimer = false;
     ListBox& owner;
     OwnedArray<RowComponent> rows;
     int firstIndex = 0, firstWholeIndex = 0, lastWholeIndex = 0;
