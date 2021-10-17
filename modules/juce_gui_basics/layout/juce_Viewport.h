@@ -81,6 +81,7 @@ public:
     Point<int> newPos;
     Point<int> currentPos;
     double startTime = 0;
+    void animateScrollTo(int y);
 
     /** Returns the component that's currently being used inside the Viewport.
 

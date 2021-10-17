@@ -586,6 +586,17 @@ bool Viewport::useMouseWheelMoveIfNeeded (const MouseEvent& e, const MouseWheelD
     return false;
 }
 
+void Viewport::animateScrollTo(int y)
+{
+    if (!isTimerRunning())
+    {
+        currentPos = getViewPosition();
+        newPos = Point<int>(0, y);
+        startTime = Time::getMillisecondCounterHiRes();
+        startTimer(1000 / 60);
+    }
+}
+
 float ViewPortScrollAlgo(float t)
 {
     float sqt = t * t;
