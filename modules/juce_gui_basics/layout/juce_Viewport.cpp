@@ -569,6 +569,20 @@ bool Viewport::useMouseWheelMoveIfNeeded (const MouseEvent& e, const MouseWheelD
             {
                 if (!wheel.isSmooth && !isTimerRunning())
                 {
+                    int distance = abs(pos.getY() - getViewPosition().y);
+                    DBG("Distance: " + String(distance));
+                    if (distance < 100)
+                    {
+                        if (pos.getY() < getViewPosition().y)
+                        {
+                            pos.setY(pos.getY() - 300);
+                        }
+                        else
+                        {
+                            pos.setY(pos.getY() + 300);
+                        }
+                    }
+
                     currentPos = getViewPosition();
                     newPos = pos;
                     startTime = Time::getMillisecondCounterHiRes();
