@@ -199,12 +199,12 @@ String InterprocessConnection::getConnectedHostName() const
 //==============================================================================
 bool InterprocessConnection::sendMessage (const MemoryBlock& message)
 {
-    uint32 messageHeader[2] = { ByteOrder::swapIfBigEndian (magicMessageHeader),
-                                ByteOrder::swapIfBigEndian ((uint32) message.getSize()) };
+    int messageHeader[2] = { ByteOrder::swapIfBigEndian (magicMessageHeader),
+                                ByteOrder::swapIfBigEndian ((int) message.getSize()) };
 
-    MemoryBlock messageData (sizeof (messageHeader) + message.getSize());
-    messageData.copyFrom (messageHeader, 0, sizeof (messageHeader));
-    messageData.copyFrom (message.getData(), sizeof (messageHeader), message.getSize());
+    MemoryBlock messageData (message.getSize());
+    //messageData.copyFrom (messageHeader, 0, sizeof (messageHeader));
+    messageData.copyFrom (message.getData(), 0, message.getSize());
 
     return writeData (messageData.getData(), (int) messageData.getSize()) == (int) messageData.getSize();
 }
@@ -340,13 +340,8 @@ int InterprocessConnection::readData (void* data, int num)
 
 bool InterprocessConnection::readNextMessage()
 {
-    uint32 messageHeader[2];
-    auto bytes = readData (messageHeader, sizeof (messageHeader));
-
-    if (bytes == (int) sizeof (messageHeader)
-         && ByteOrder::swapIfBigEndian (messageHeader[0]) == magicMessageHeader)
     {
-        auto bytesInMessage = (int) ByteOrder::swapIfBigEndian (messageHeader[1]);
+        auto bytesInMessage = 999999;// (int)ByteOrder::swapIfBigEndian(messageHeader[1]);
 
         if (bytesInMessage > 0)
         {
@@ -369,19 +364,20 @@ bool InterprocessConnection::readNextMessage()
             }
 
             if (bytesRead >= 0)
-                deliverDataInt (messageData);
+            {
+                deliverDataInt(messageData);
+                return true;
+            }
         }
-
-        return true;
     }
-
+    /*
     if (bytes < 0)
     {
         if (socket != nullptr)
             deletePipeAndSocket();
 
         connectionLostInt();
-    }
+    }*/
 
     return false;
 }
