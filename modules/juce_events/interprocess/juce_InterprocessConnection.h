@@ -71,7 +71,8 @@ public:
                                             use matching values or they won't recognise each other.
     */
     InterprocessConnection (bool callbacksOnMessageThread = true,
-                            uint32 magicMessageHeaderNumber = 0xf2b49e2c);
+                            uint32 magicMessageHeaderNumber = 0xf2b49e2c,
+                            bool useMagicNumber = true);
 
     /** Destructor. */
     virtual ~InterprocessConnection();
@@ -195,6 +196,7 @@ private:
     std::unique_ptr<StreamingSocket> socket;
     std::unique_ptr<NamedPipe> pipe;
     bool callbackConnectionState = false;
+    bool useMagicNumber = true;
     const bool useMessageThread;
     const uint32 magicMessageHeader;
     int pipeReceiveMessageTimeout = -1;

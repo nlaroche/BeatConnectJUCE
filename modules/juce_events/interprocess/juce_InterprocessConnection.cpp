@@ -71,9 +71,10 @@ class InterprocessConnection::SafeAction : public SafeActionImpl
 };
 
 //==============================================================================
-InterprocessConnection::InterprocessConnection (bool callbacksOnMessageThread, uint32 magicMessageHeaderNumber)
+InterprocessConnection::InterprocessConnection (bool callbacksOnMessageThread, uint32 magicMessageHeaderNumber, bool magicNumberIncluded)
     : useMessageThread (callbacksOnMessageThread),
       magicMessageHeader (magicMessageHeaderNumber),
+      useMagicNumber(magicNumberIncluded),
       safeAction (std::make_shared<SafeAction> (*this))
 {
     thread.reset (new ConnectionThread (*this));
@@ -199,14 +200,27 @@ String InterprocessConnection::getConnectedHostName() const
 //==============================================================================
 bool InterprocessConnection::sendMessage (const MemoryBlock& message)
 {
-    uint32 messageHeader[2] = { ByteOrder::swapIfBigEndian (magicMessageHeader),
-                                ByteOrder::swapIfBigEndian ((uint32) message.getSize()) };
+    if (useMagicNumber)
+    {
+        uint32 messageHeader[2] = { ByteOrder::swapIfBigEndian(magicMessageHeader),
+                                    ByteOrder::swapIfBigEndian((uint32)message.getSize()) };
 
-    MemoryBlock messageData (sizeof (messageHeader) + message.getSize());
-    messageData.copyFrom (messageHeader, 0, sizeof (messageHeader));
-    messageData.copyFrom (message.getData(), sizeof (messageHeader), message.getSize());
+        MemoryBlock messageData(sizeof(messageHeader) + message.getSize());
+        messageData.copyFrom(messageHeader, 0, sizeof(messageHeader));
+        messageData.copyFrom(message.getData(), sizeof(messageHeader), message.getSize());
 
-    return writeData (messageData.getData(), (int) messageData.getSize()) == (int) messageData.getSize();
+        return writeData(messageData.getData(), (int)messageData.getSize()) == (int)messageData.getSize();
+    }
+    else
+    {
+        uint32 messageHeader = ByteOrder::swapIfBigEndian((uint32)message.getSize());
+
+        MemoryBlock messageData(sizeof(messageHeader) + message.getSize());
+        messageData.copyFrom(&messageHeader, 0, sizeof(messageHeader));
+        messageData.copyFrom(message.getData(), sizeof(messageHeader), message.getSize());
+
+        return writeData(messageData.getData(), (int)messageData.getSize()) == (int)messageData.getSize();
+    }
 }
 
 int InterprocessConnection::writeData (void* data, int dataSize)
@@ -340,13 +354,19 @@ int InterprocessConnection::readData (void* data, int num)
 
 bool InterprocessConnection::readNextMessage()
 {
-    uint32 messageHeader[2];
-    auto bytes = readData (messageHeader, sizeof (messageHeader));
+    uint32 messageHeader[2]{ 0, 0 };
+    int sizeHeader = useMagicNumber ? sizeof(messageHeader) : sizeof(messageHeader) / 2;
+    auto bytes = readData (messageHeader, sizeHeader);
 
-    if (bytes == (int) sizeof (messageHeader)
-         && ByteOrder::swapIfBigEndian (messageHeader[0]) == magicMessageHeader)
+    bool allow = (useMagicNumber && ByteOrder::swapIfBigEndian(messageHeader[0]) == magicMessageHeader) ||
+        !useMagicNumber;
+
+    if (bytes == sizeHeader
+        && bytes > 0
+        && allow)
     {
-        auto bytesInMessage = (int) ByteOrder::swapIfBigEndian (messageHeader[1]);
+        int index = useMagicNumber ? 1 : 0;
+        auto bytesInMessage = (int) ByteOrder::swapIfBigEndian (messageHeader[index]);
 
         if (bytesInMessage > 0)
         {
